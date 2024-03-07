@@ -35,7 +35,7 @@ class AIAssistant:
             self.transcriber = None
 
     def on_open(self, session_opened: aai.RealtimeSessionOpened):
-        # print("Session ID:", session_opened.session_id)
+        print("Session ID:", session_opened.session_id)
         return
 
     def on_data(self, transcript: aai.RealtimeTranscript):
@@ -48,11 +48,11 @@ class AIAssistant:
             print(transcript.text, end="\r")
 
     def on_error(self, error: aai.RealtimeError):
-        # print("An error occured:", error)
+        print("An error occured:", error)
         return
 
     def on_close(self):
-        # print("Closing Session")
+        print("Closing Session")
         return
 
 # generate ai response
