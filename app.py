@@ -1,12 +1,11 @@
 import api_keys
-import assemblyai as aai
 from elevenlabs import stream, generate
 from openai import OpenAI
+from whisperlive import transcribe_real_time
 
 
 class AIAssistant:
     def __init__(self) -> None:
-        aai.settings.api_key = api_keys.assemblyai()
         self.openai_client = OpenAI(api_key=api_keys.openai())
         self.elevenlabs_api_key = api_keys.eleven()
 
@@ -19,48 +18,20 @@ class AIAssistant:
 
 # real-time transcription
     def start_transcription(self):
-        self.transcriber = aai.RealtimeTranscriber(sample_rate=16000,
-                                                   on_data=self.on_data,
-                                                   on_error=self.on_error,
-                                                   on_open=self.on_open,
-                                                   on_close=self.on_close,
-                                                   end_utterance_silence_threshold=1000)
-        self.transcriber.connect()
-        microphone_stream = aai.extras.MicrophoneStream(sample_rate=16000)
-        self.transcriber.stream(microphone_stream)
-
-    def stop_transcription(self):
-        if self.transcriber:
-            self.transcriber.close()
-            self.transcriber = None
-
-    def on_open(self, session_opened: aai.RealtimeSessionOpened):
-        print("Session ID:", session_opened.session_id)
-        return
-
-    def on_data(self, transcript: aai.RealtimeTranscript):
-        if not transcript.text:
-            return
-
-        if isinstance(transcript, aai.RealtimeFinalTranscript):
-            self.generate_ai_response(transcript)
+        transcript_text = transcribe_real_time(
+            audio_length=10, model_name="base")
+        if transcript_text:
+            self.generate_ai_response(transcript_text)
         else:
-            print(transcript.text, end="\r")
+            print("No audio detected. Please try speaking again.")
 
-    def on_error(self, error: aai.RealtimeError):
-        print("An error occured:", error)
-        return
-
-    def on_close(self):
-        print("Closing Session")
-        return
 
 # generate ai response
+
     def generate_ai_response(self, transcript):
-        self.stop_transcription()
         self.full_transcript.append(
-            {'role': 'user', 'content': transcript.text})
-        print(f'\nYou:{transcript.text}', end='\r\n')
+            {'role': 'user', 'content': transcript})
+        print(f'\nYou:{transcript}', end='\r\n')
         response = self.openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=self.full_transcript
